@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import time
+from FSM import FSMStorage
 
 import requests
 
@@ -20,6 +21,7 @@ class BotHandler:
         self.token = token
         self.url = 'https://botapi.max.ru/'
         self.marker = None
+        self.storage: FSMStorage = FSMStorage() 
 
     def get_updates(self, limit=1, timeout=45):
         """
@@ -1645,7 +1647,7 @@ class BotHandler:
         :param content: имя файла или список имен файлов с изображениями
         :return: attach: подготовленный контент
         """
-        self.sending_photo(self.get_chat_id())
+        # self.sending_photo(self.get_chat_id())
         attach = []
         if isinstance(content, str):
             token = self.token_upload_content('image', content)

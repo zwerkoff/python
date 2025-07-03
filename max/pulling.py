@@ -4,11 +4,11 @@ from handlers import client
 from flask import Flask, request, jsonify  # для webhook
 from config import TOKEN
 from api import BotHandler
+from commands import get_commands
 
 bot = BotHandler(TOKEN)
-commands = [bot.command('id', 'Вывод id пользователя в max'),
-            bot.command('help', 'Помощь по основным командам бота'),
-            bot.command('ping', 'Игра в пинг понг')]
+
+commands = get_commands()
 bot.edit_bot_info(name=None, username=None, description=None, commands=commands, photo=None)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - % (message)s', level=logging.INFO) 

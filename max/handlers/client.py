@@ -1,115 +1,44 @@
 from api import BotHandler
-import FSM
-import keyboards
-from time import sleep
+from FSM import FSM
+from config import SUPPORT
+from handlers import support
+from commands import text_commands, commands_with_slash
+
+
 
 def handler(bot: BotHandler, upd: dict):
+    
+    user_id = bot.get_user_id(upd)
+    fsm = FSM(bot.storage, user_id)
+    message_id = bot.get_message_id(upd)
     chat_id = bot.get_chat_id(upd)
     text = bot.get_text(upd)
-    message_id = bot.get_message_id(upd)
-    user_id = bot.get_user_id(upd)
-    type_message = bot.get_update_type(upd)
-    commands = bot.get_bot_commands()
-    commands = [f"/{i['name']}" for i in commands]
 
-    # Ловим нажатие на клавитатуру
-    if type_message == 'message_callback':
-        callback_id = bot.get_callback_id(upd)
-        payload = bot.get_payload(upd)
-        
-        match payload:
-            case '1': bot.send_message(f'вы нажали {payload}', chat_id)
-            case '2': bot.send_answer_callback(callback_id, None, f'вы нажали {payload}')
-            case '3': bot.edit_message(message_id, 'Нажатие на кнопку 3')
-            case _:
-                # bot.send_answer_callback(callback_id, notification=None, text=f'вы нажали {payload}',attachments=None)
-                # bot.send_message(f'вы нажали {payload}', chat_id)
-                bot.delete_message(message_id)
-                sleep(0.2)
-                bot.send_message(f'вы нажали {payload}', chat_id)
+    # if user_id == SUPPORT:
+    #     support.handler(bot, upd)
+    #     return True
+
+    if fsm.state:
+        pass
         return True
 
-    # Ловим команды
-    if text in commands:
+    if text in commands_with_slash:
         match text:
-            case '/id': bot.send_message(f'Ваш id в max: {user_id}', chat_id)
-            case '/help': bot.send_message(f'Доступные команды бота: {bot.get_bot_commands()}', chat_id)
-            case '/ping': 
-                key = keyboards.test(bot)
-                bot.send_buttons('None', key, chat_id)
-                # FSM.state(chat_id, 'start')
-                # bot.send_reply_message(f'pong: {FSM.get_state(chat_id)}', message_id , chat_id)
-                # FSM.state(chat_id, 'finish')
-                # bot.send_reply_message(f'pong: {FSM.get_state(chat_id)}', message_id , chat_id)
-                # FSM.finish(chat_id)
-                # bot.send_reply_message(f'pong: {FSM.get_state(chat_id)}', message_id , chat_id)
-            case _: bot.send_message(text, chat_id)
+            case '/help': bot.send_message(text_commands, chat_id, attachments=None)
+            case '/support': 
+                message_text = 'Здесь будет отрабатывать функция при начале разговора с поддержкой'
+                bot.send_message(message_text, chat_id, attachments=None)
+            case '/count': 
+                message_text = 'Здесь будет отрабатывать функция при передаче показаний счётчика'
+                bot.send_message(message_text, chat_id, attachments=None)
+            case _: 
+                name = bot.get_name(upd)
+                message_text = f'''Ваш id в max: {user_id}\nВаш name в max: {name}\n'''
+                bot.send_message(message_text, chat_id, attachments=None)
         return True
 
-    # Просто отвечаем на сообщение
-    bot.send_message(text, chat_id)
-    return True
+
+    # Эхо бот. Если просто сообщение отправляю список команд бота
+    bot.send_message(text_commands, chat_id, attachments=None)
 
 
-    
-
-
-
-
-
-# class Handler():
-
-#     def __init__(self, bot: BotHandler):
-#         self.bot = bot
-#         self.upd = self.bot.get_updates()
-#         self.chat_id = self.bot.get_chat_id(self.upd)
-#         self.text = self.bot.get_text(self.upd)
-
-#     def message(self):
-#         text = f'Пересылаю текст: {self.text}'
-#         self.bot.send_message(text, self.chat_id)
-
-#     def command(self):
-#         text = f'Пересылаю команду: {self.text}'
-#         self.bot.send_message(text, self.chat_id)
-
-
-
-# def register_handlers(bot: BotHandler, upd):
-    
-#     chat_id = bot.get_chat_id(upd)
-#     bot.mark_seen(chat_id)
-#     text = bot.get_text(upd)
-#     message_id = bot.get_message_id(upd)
-#     user_id = bot.get_user_id(upd)
-#     type_message = bot.get_update_type(upd)
-
-#     if type_message == 'message_callback':
-#         callback_id = bot.get_callback_id(upd)
-#         payload = bot.get_payload(upd)
-        
-#         match payload:
-#             case '1': bot.send_message(f'вы нажали {payload}', chat_id)
-#             case '2': bot.send_answer_callback(callback_id, None, f'вы нажали {payload}')
-#             case '3': 
-#                 bot.edit_message(message_id, 'test well ...')
-#             case _:
-#                 bot.send_answer_callback(callback_id, notification=None, text=f'вы нажали {payload}',attachments=None)
-#                 bot.send_message(f'вы нажали {payload}', chat_id)
-#                 bot.delete_message(message_id)
-
-#     match text:
-#         case '/id': bot.send_message(f'Ваш id в max: {user_id}', chat_id)
-#         case '/help': bot.send_message(f'Доступные команды бота: {bot.get_bot_commands()}', chat_id)
-#         case '/ping': 
-#             key = keyboards.test(bot)
-#             bot.send_buttons('None', key, chat_id)
-#             # FSM.state(chat_id, 'start')
-#             # bot.send_reply_message(f'pong: {FSM.get_state(chat_id)}', message_id , chat_id)
-#             # FSM.state(chat_id, 'finish')
-#             # bot.send_reply_message(f'pong: {FSM.get_state(chat_id)}', message_id , chat_id)
-#             # FSM.finish(chat_id)
-#             # bot.send_reply_message(f'pong: {FSM.get_state(chat_id)}', message_id , chat_id)
-#         case _: bot.send_message(text, chat_id)
-
-#     return True
