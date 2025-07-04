@@ -1,8 +1,8 @@
 import json
 import logging
-from handlers import client
+import handlers
 from flask import Flask, request, jsonify  # для webhook
-from config import TOKEN
+from config import TOKEN, SUPPORT
 from api import BotHandler
 from commands import get_commands
 
@@ -20,10 +20,14 @@ logger = logging.getLogger(__name__)
 
 def main():
     while True:
-        upd = bot.get_updates()  
+        update = bot.get_updates()  
     
-        if upd:  
-           client.handler(bot, upd)
+        if update:  
+            upd = handlers.update.Update(bot, update)
+            if upd.user_id == SUPPORT:
+                handlers.support.handler(bot, upd)
+            else:
+                handlers.client.handler(bot, upd)
 
 if __name__ == '__main__':
     try:

@@ -1,7 +1,7 @@
 from api import BotHandler
 from FSM import FSM
+from handlers.update import Update
 from config import SUPPORT
-from handlers import support
 from commands import text_commands, commands_with_slash
 import logging
 import keyboards
@@ -9,84 +9,83 @@ import keyboards
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def command_support(bot: BotHandler, upd):
-
-    chat_id = bot.get_chat_id(upd)
-    user_name = bot.get_name(upd)
-    user_id = bot.get_user_id(upd)
+def command_support(bot: BotHandler, upd: Update):
 
     # Получаем состояние опретора. 
     # Если не занят отправляем запрос на подключение
-    support_state = FSM(bot.storage, SUPPORT)
+    fsm_support = FSM(bot.storage, SUPPORT)
+    fsm = FSM(bot.storage, upd.user_id)
     
-    logger.info(f'state_support: {support_state.state}')
-    if support_state.state:
-        message_text = 'Оператор в данный момент занят. Попробуйте написать позднее'
-        bot.send_message(message_text, chat_id, attachments=None)
-        return True
+    if fsm_support.state:
+        bot.send_message('Оператор в данный момент занят. Попробуйте написать позднее', upd.chat_id, attachments=None)
+    else:    
+        bot.send_message('Запрос отправлен оператору. Ожидайте подключения', upd.chat_id, attachments=None)
+
+        # Добавляю в хранилище данных опретора id абонента
+        # Меняю состояние абонента на 'wait_support'
+        fsm_support.data = upd.user_id
+        fsm.state = 'wait_support'
+        
+        # Отправляю сообщение оператору с клавиатурой
+        message_text = f'Абонент: {upd.user_name} ожидает начала диалога'
+        message = bot.send_message(message_text, chat_id=None, user_id=SUPPORT, attachments=keyboards.request_support())
+        
+        # Получаю идентификатор отправленного сообщения. Записываю его в хранилище абонента
+        # Если абонент передумает на следующем шаге, изменю это сообшение
+        mid = bot.get_message_id(message)
+        fsm.data = mid
     
-    message_text = 'Запрос отправлен оператору. Ожидайте подключения'
-    bot.send_message(message_text, chat_id, attachments=None)
-
-    # Добавляю в хранилище данных опретора id абонента
-    support_state.data = user_id
-
-    # Отправляю сообщение оператору с клавиатурой
-    message_text = f'Абонент: {user_name} ожидает начала диалога'
-    keyboard = bot.attach_buttons(keyboards.keyboard_request_support())
-    bot.send_message(message_text, chat_id=None, user_id=SUPPORT, attachments=keyboard)
-
-    return True
-    
+    return True    
     
 
-def handler(bot: BotHandler, upd: dict):
+def handler(bot: BotHandler, upd: Update):
     
-    user_id = bot.get_user_id(upd)
-    fsm = FSM(bot.storage, user_id)
-    message_id = bot.get_message_id(upd)
-    chat_id = bot.get_chat_id(upd)
-    text = bot.get_text(upd)
-
-    if user_id == SUPPORT:
-        support.handler(bot, upd)
-        return True
+    fsm = FSM(bot.storage, upd.user_id)
 
     if fsm.state:
         if fsm.state == 'support':
-            # attach = bot.get_attachments(upd)
-            # bot.send_message(text, chat_id=None, user_id=SUPPORT, attachments=attach)
 
-            if text == '/cancel':
-                support_state = FSM(bot.storage, SUPPORT)
-                del support_state.state
-                del support_state.data
+            if upd.text == '/cancel':
+                fsm_support = FSM(bot.storage, SUPPORT)
+                del fsm_support.state
+                del fsm_support.data
                 del fsm.state
                 bot.send_message('Сеанс завершён.', chat_id=None, user_id=SUPPORT, attachments=None)
-                bot.send_message('Сеанс завершён.', chat_id, attachments=None)
+                bot.send_message('Сеанс завершён.', upd.chat_id, attachments=None)
             else:
-                bot.send_forward_message(text, message_id,chat_id=None, user_id=SUPPORT)
+                bot.send_forward_message(upd.text, upd.message_id, chat_id=None, user_id=SUPPORT)
+        
+        elif fsm.state == 'wait_support':
+            if upd.text == '/cancel':
+                mid = fsm.data
+                bot.edit_message(mid, 'Запрос отменён абонентом', attachments=[])
+                del fsm.state
+                del fsm.data
+                bot.send_message('Запрос отменён.', upd.chat_id, attachments=None)
+            else:
+                bot.send_message('Вы в состоянии ожидания диалога с оперетором поддержки. Для отмены отправьте /cancel', upd.chat_id, attachments=None)
+        
         else:
             pass
 
         return True
 
-    if text in commands_with_slash:
-        match text:
-            case '/help': bot.send_message(text_commands, chat_id, attachments=None)
-            case '/support':
-                command_support(bot, upd)
-            case '/count': 
-                message_text = 'Здесь будет отрабатывать функция при передаче показаний счётчика'
-                bot.send_message(message_text, chat_id, attachments=None)
-            case _: 
-                name = bot.get_name(upd)
-                message_text = f'''Ваш id в max: {user_id}\nВаш name в max: {name}\n'''
-                bot.send_message(message_text, chat_id, attachments=None)
-        return True
 
 
-    # Эхо бот. Если просто сообщение отправляю список команд бота
-    bot.send_message(text_commands, chat_id, attachments=None)
+    match upd.text:
+        case '/help': bot.send_message(text_commands, upd.chat_id, attachments=None)
+        case '/support':
+            command_support(bot, upd)
+        case '/count': 
+            message_text = 'Здесь будет отрабатывать функция при передаче показаний счётчика'
+            bot.send_message(message_text, upd.chat_id, attachments=None)
+        case '/info': 
+            message_text = f'''Ваш id в max: {upd.user_id}\nВаш name в max: {upd.user_name}\n'''
+            bot.send_message(message_text, upd.chat_id, attachments=None)
+        case _:
+            # Если просто сообщение отправляю список команд бота
+            bot.send_message(text_commands, upd.chat_id, attachments=None)
+
+    return True
 
 
