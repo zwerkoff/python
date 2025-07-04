@@ -12,19 +12,11 @@ def button_callback(text, payload, intent='default'):
                   "intent": intent}
         return button
 
-def test():
+def keyboard_request_support():
+    
     key = list()
-    button1 = button_callback('первая', '1')
-    button2 = button_callback('вторая', '2')
-    button3 = button_callback('третья', '3')
-    button4 = button_callback('четвертая', '4')
-    key.append([button1, button2])
-    key.append([button3, button4])
+    button1 = button_callback('Начать диалог с абонентом', 'start_support')
+    key.append([button1])
     
     return key
 
-def empty_keyboard():
-    key = list()
-    button1 = button_callback('первая', '1')
-    key.append([button1])
-    return key
