@@ -46,6 +46,7 @@ def handler(bot: BotHandler, upd: Update):
         if fsm.state == 'support':
 
             if upd.text == '/cancel':
+                # при отмене сбрасывает состояния оператора и абонента
                 fsm_support = FSM(bot.storage, SUPPORT)
                 del fsm_support.state
                 del fsm_support.data
@@ -57,6 +58,8 @@ def handler(bot: BotHandler, upd: Update):
         
         elif fsm.state == 'wait_support':
             if upd.text == '/cancel':
+                # при отмене меняем сообщение, которое было отправлено оператору на прошлом шаге. 
+                # ID этого сообщения поместили на прошлом шаге в хранилище абонента
                 mid = fsm.data
                 bot.edit_message(mid, 'Запрос отменён абонентом', attachments=[])
                 del fsm.state
