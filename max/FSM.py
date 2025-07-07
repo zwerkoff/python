@@ -1,6 +1,6 @@
 from typing import *
 
-class FSMStorage(dict):
+class FSMStorage():
     
     def __init__(self):
         self.states: dict(int, str) = dict()
