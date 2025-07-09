@@ -45,3 +45,21 @@ class Update:
     @property
     def type_message(self):
         return self.bot.get_update_type(self.upd)
+
+    @property
+    def id_link_message(self):
+        link_message = self.bot.get_link_message(self.upd)
+        if link_message:
+            return link_message.get('mid')
+        return None
+
+    @property
+    def link_type(self):
+        return self.bot.get_link_type(self.upd)
+
+    def __str__(self):
+        res = '{\n'
+        for key, value in self.upd.items():
+            res += f'{key}  :   {value}\n'
+        res += '}'
+        return res

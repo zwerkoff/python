@@ -1,5 +1,5 @@
 from api import BotHandler
-from FSM import FSM
+from FSM import FSM, MID
 from handlers.update import Update
 from config import SUPPORT
 from commands import text_commands, commands_with_slash
@@ -34,6 +34,9 @@ def command_support(bot: BotHandler, upd: Update):
         # Если абонент передумает на следующем шаге, изменю это сообшение
         mid = bot.get_message_id(message)
         fsm.data = mid
+
+        mid_storage = MID(bot.storage, upd.user_id)
+        mid_storage.add_abonent_chat_id(upd.chat_id)
     
     return True    
     
@@ -43,18 +46,39 @@ def handler(bot: BotHandler, upd: Update):
     fsm = FSM(bot.storage, upd.user_id)
 
     if fsm.state:
+
+        mid_storage = MID(bot.storage, upd.user_id)
+
         if fsm.state == 'support':
 
             if upd.text == '/cancel':
                 # при отмене сбрасывает состояния оператора и абонента
                 fsm_support = FSM(bot.storage, SUPPORT)
+
+                bot.send_message('Сеанс завершён.', chat_id=None, user_id=SUPPORT, attachments=None)
+                bot.send_message('Сеанс завершён.', upd.chat_id, attachments=None)
+
                 del fsm_support.state
                 del fsm_support.data
                 del fsm.state
-                bot.send_message('Сеанс завершён.', chat_id=None, user_id=SUPPORT, attachments=None)
-                bot.send_message('Сеанс завершён.', upd.chat_id, attachments=None)
+                mid_storage.del_mid()
             else:
-                bot.send_forward_message(upd.text, upd.message_id, chat_id=None, user_id=SUPPORT)
+                if upd.type_message == 'message_edited':
+                    mid_operator = mid_storage.get_value(upd.message_id)
+                    bot.edit_message(mid_operator, upd.text)
+                elif upd.id_link_message:
+                    if upd.link_type == 'reply':
+                        mid_operator = mid_storage.get_value(upd.id_link_message)
+                        operator_chat_id = mid_storage.get_value('operator_chat_id')
+                        send_message = bot.send_reply_message(upd.text, mid_operator, operator_chat_id)
+                        mid_storage.add_mid(bot.get_message_id(send_message), upd.message_id)
+                    else:
+                        send_message = bot.send_forward_message(upd.text, upd.message_id, chat_id=None, user_id=SUPPORT)
+                        mid_storage.add_mid(bot.get_message_id(send_message), upd.message_id)
+
+                else:
+                    send_message = bot.send_message(upd.text, chat_id=None, user_id=SUPPORT, attachments=upd.attachments)
+                    mid_storage.add_mid(bot.get_message_id(send_message), upd.message_id)
         
         elif fsm.state == 'wait_support':
             if upd.text == '/cancel':
@@ -64,6 +88,7 @@ def handler(bot: BotHandler, upd: Update):
                 bot.edit_message(mid, 'Запрос отменён абонентом', attachments=[])
                 del fsm.state
                 del fsm.data
+                mid_storage.del_mid()
                 bot.send_message('Запрос отменён.', upd.chat_id, attachments=None)
             else:
                 bot.send_message('Вы в состоянии ожидания диалога с оперетором поддержки. Для отмены отправьте /cancel', upd.chat_id, attachments=None)
