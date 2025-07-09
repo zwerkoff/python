@@ -23,11 +23,11 @@ def main():
         update = bot.get_updates()  
     
         if update:  
-            upd = handlers.update.Update(bot, update)
-            if upd.user_id == SUPPORT:
-                handlers.support.handler(bot, upd)
+            msg = handlers.functions.Message(bot, update)
+            if msg.user_id in SUPPORT:
+                handlers.support.handler(bot, msg)
             else:
-                handlers.client.handler(bot, upd)
+                handlers.client.handler(bot, msg)
 
 if __name__ == '__main__':
     try:
