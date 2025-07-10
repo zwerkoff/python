@@ -1473,7 +1473,6 @@ class BotHandler:
             button_callback, button_contact, button_link, button_location и т.д.
         :return attach: подготовленный контент
         """
-        # self.typing_on(self.get_chat_id())
         attach = None
         if isinstance(buttons, list):
             try:
@@ -1571,7 +1570,6 @@ class BotHandler:
         :param format: значение "markdown" или "html", текст будет отформатирован соответственно
         :return update: результат POST запроса на отправку кнопок
         """
-        # self.typing_on(chat_id)
         attach = self.attach_buttons(buttons)
         update = self.send_message(text, chat_id, attachments=attach, format=format)
         return update
@@ -1619,7 +1617,6 @@ class BotHandler:
         :param content_name: имя с которым будет загружен файл
         :return: attach: подготовленный контент
         """
-        self.sending_file(self.get_chat_id())
         token = self.token_upload_content('file', content, content_name)
         attach = [{"type": "file", "payload": token}]
         return attach
@@ -1635,7 +1632,6 @@ class BotHandler:
         :param format: значение "markdown" или "html", текст будет отформатирован соответственно
         :return: update: результат работы POST запроса отправки файла
         """
-        self.sending_file(chat_id)
         attach = self.attach_file(content, content_name)
         update = self.send_message(text, chat_id, attachments=attach, format=format)
         return update
@@ -1647,7 +1643,6 @@ class BotHandler:
         :param content: имя файла или список имен файлов с изображениями
         :return: attach: подготовленный контент
         """
-        # self.sending_photo(self.get_chat_id())
         attach = []
         if isinstance(content, str):
             token = self.token_upload_content('image', content)
@@ -1668,7 +1663,6 @@ class BotHandler:
         :param format: значение "markdown" или "html", текст будет отформатирован соответственно
         :return: update: результат работы POST запроса отправки файла
         """
-        self.sending_photo(chat_id)
         attach = self.attach_image(content)
         update = self.send_message(text, chat_id, attachments=attach, format=format)
         return update
@@ -1680,7 +1674,6 @@ class BotHandler:
         :param url: http адрес или список адресов с изображениями
         :return: attach: подготовленный контент
         """
-        self.sending_photo(self.get_chat_id())
         attach = []
         if isinstance(url, str):
             attach.append({"type": "image", "payload": {'url': url}})
@@ -1699,7 +1692,6 @@ class BotHandler:
         :param format: значение "markdown" или "html", текст будет отформатирован соответственно
         :return: update: результат работы POST запроса отправки фото
         """
-        self.sending_photo(chat_id)
         attach = self.attach_image_url(url)
         update = self.send_message(text, chat_id, attachments=attach, format=format)
         return update
@@ -1712,7 +1704,6 @@ class BotHandler:
                         иди список файлов ['movie.mp4', 'movie2.mkv']
         :return: attach: подготовленный контент
         """
-        self.sending_video(self.get_chat_id())
         attach = []
         if isinstance(content, str):
             token = self.token_upload_content('video', content)
@@ -1734,7 +1725,6 @@ class BotHandler:
         :param format: значение "markdown" или "html", текст будет отформатирован соответственно
         :return: update: результат работы POST запроса отправки видео
         """
-        self.sending_video(chat_id)
         attach = self.attach_video(content)
         update = self.send_message(text, chat_id, attachments=attach, format=format)
         return update
@@ -1762,7 +1752,6 @@ class BotHandler:
         :param format: значение "markdown" или "html", текст будет отформатирован соответственно
         :return: update: результат работы POST запроса отправки аудио
         """
-        self.sending_audio(chat_id)
         attach = self.attach_audio(content)
         update = self.send_message(text, chat_id, attachments=attach, format=format)
         return update
@@ -1779,7 +1768,6 @@ class BotHandler:
         :param format: значение "markdown" или "html", текст будет отформатирован соответственно
         :return update: response | ответ на POST message в соответствии с API
         """
-        # self.typing_on(chat_id)
         link = self.link_forward(mid)
         update = self.send_message(text, chat_id, user_id, link=link, format=format)
         return update
@@ -1820,7 +1808,6 @@ class BotHandler:
         :param format: значение "markdown" или "html", текст будет отформатирован соответственно
         :return update: response | ответ на POST запрос в соответствии с API
         """
-        # self.typing_on(chat_id)
         link = self.link_reply(mid)
         update = self.send_message(text, chat_id, link=link, dislinkprev=dislinkprev, format=format)
         return update
@@ -1888,6 +1875,7 @@ class BotHandler:
                 if 'code' in upd.keys():
                     flag = upd.get('code')
                     logger.info('send_message: attach not ready, wait 5s')
+                    time.sleep(0.1)
                 else:
                     flag = None
                     if response.status_code == 200:
@@ -1939,7 +1927,7 @@ class BotHandler:
                 if 'code' in upd.keys():
                     flag = upd.get('code')
                     logger.info('ждем 5 сек...')
-                    time.sleep(5)
+                    time.sleep(0.1)
                 else:
                     flag = None
                     if response.status_code == 200:
@@ -2001,7 +1989,7 @@ class BotHandler:
                 if 'code' in upd.keys():
                     flag = upd.get('code')
                     logger.info('send_construct_message: ждем 5 сек...')
-                    time.sleep(5)
+                    time.sleep(0.1)
                 else:
                     flag = None
                     if response.status_code == 200:

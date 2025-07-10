@@ -3,7 +3,7 @@ from FSM import FSM
 from config import SUPPORT
 import logging
 import keyboards
-
+import os
 
 class Message:
     """
@@ -124,7 +124,7 @@ def send_command_support(bot: BotHandler, msg: Message):
         fsm_support.state = 'wait_support'
         fsm_support.data = msg.user_id
         
-        bot.send_message('Запрос отправлен оператору. Ожидайте подключения', msg.chat_id)
+        bot.send_message('Запрос отправлен оператору. Ожидайте подключения. Для отмены отправьте /cancel', msg.chat_id)
 
         # Отправляю сообщение оператору с клавиатурой
         message_text = f'Абонент: {msg.user_name}\nid: {msg.user_id}\nожидает начала диалога'
