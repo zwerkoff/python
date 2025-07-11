@@ -5,13 +5,10 @@ commands = [
     ('info', 'Вывод доступной информации боту о Вашем аккаунте в Max')
 ]
 
+#для команды help формирую строку с командами
 text_commands = """"""
 for com, description in commands:
     text_commands += f'/{com} - {description} \n'
-
-commands_with_slash = [f'/{i[0]}' for i in commands]
-
-
 
 def command(name, description):
         """

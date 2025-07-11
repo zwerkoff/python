@@ -1,7 +1,7 @@
 from api import BotHandler
 from FSM import FSM
 from handlers.functions import Message, talking_to_support, send_command_support
-from commands import text_commands, commands_with_slash
+from commands import text_commands
 import logging
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
